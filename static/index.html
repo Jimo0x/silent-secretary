@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Silent Secretary</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><circle cx=%225%22 cy=%225%22 r=%224%22 fill=%22%23e5172f%22/></svg>">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .hist{max-height:calc(100vh - 230px);overflow:auto}
+  .hist .item{margin-bottom:8px}
+  .hist .item.on{border-color:var(--red);background:var(--redsoft)}
+  .turn{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .spk{font-weight:700;font-size:12.5px;cursor:pointer} .spk small{display:block;color:var(--dim);font:11px var(--mono);font-weight:400}
+  .transcript{max-height:calc(100vh - 260px);overflow:auto;padding-right:6px}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)} .task.done span{text-decoration:line-through;color:var(--dim)}
+  .chip{display:inline-block;padding:4px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line2);margin:0 6px 6px 0;font-size:12px}
+  .rec-btn{width:84px;height:84px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:28px;cursor:pointer;box-shadow:0 0 0 8px var(--redsoft),0 0 40px var(--redglow)}
+  .rec-btn.on{animation:pulse 1.2s infinite}
+  .live-text{min-height:160px;max-height:300px;overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;font-size:13px}
+  .interim{color:var(--dim);font-style:italic}
+  ul.clean{margin:0;padding-left:18px} ul.clean li{margin:6px 0}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>SILENT SECRETARY <small>comptes rendus de réunion automatiques</small></div>
+  <div class="spacer"></div><span class="badge" id="engine"></span>
+</header>
+<main class="wrap layout" style="grid-template-columns:260px 1fr">
+  <aside class="col">
+    <button class="btn" id="newBtn">＋ Nouvelle réunion</button>
+    <div class="kicker" style="margin-top:10px">Historique</div>
+    <div class="hist" id="hist"></div>
+  </aside>
+  <section id="main"></section>
+</main>
+
+<template id="tplNew">
+  <div class="card">
+    <div class="row between"><div><div class="kicker">Nouvelle réunion</div><h1 style="margin-top:6px">Capturer une réunion</h1></div>
+      <input class="input" id="title" placeholder="Titre de la réunion" style="max-width:320px"></div>
+    <div class="tabs" id="srcTabs"><div class="tab on" data-t="live">🎙 Dictée en direct</div><div class="tab" data-t="audio">🎧 Fichier audio</div><div class="tab" data-t="text">📝 Transcription</div></div>
+    <div data-p="live">
+      <div class="row" style="gap:24px;align-items:flex-start">
+        <div class="col" style="align-items:center;gap:8px"><button class="rec-btn" id="rec">●</button><span class="mono dim" id="clock">00:00</span></div>
+        <div class="grow col">
+          <label>Qui parle ? (touches 1 à 9)</label><div class="row" id="spkBtns"></div>
+          <div class="live-text" id="live"><span class="dim">La transcription apparaîtra ici. La dictée utilise la reconnaissance vocale du navigateur (Chrome, Edge).</span></div>
+          <div class="row"><select id="lang" style="max-width:160px"><option value="fr-FR">Français</option><option value="en-US">English</option></select>
+            <button class="btn" id="liveDone" disabled>Générer le compte rendu</button></div>
+        </div>
+      </div>
+    </div>
+    <div data-p="audio" hidden>
+      <div class="drop" id="audioDrop"><div style="font-size:28px">🎧</div><b>Déposez un enregistrement</b><div class="dim">mp3, wav, m4a, webm… transcrit par Whisper avec séparation des voix</div><input type="file" id="audioFile" accept="audio/*,video/*" hidden></div>
+      <div class="row" style="margin-top:12px"><select id="model" style="max-width:200px"><option value="tiny">Whisper tiny (rapide)</option><option value="base" selected>Whisper base</option><option value="small">Whisper small (précis)</option></select></div>
+    </div>
+    <div data-p="text" hidden>
+      <textarea id="text" rows="12" placeholder="Alice: Bonjour à tous…&#10;Bob: …&#10;&#10;Formats acceptés : « Nom: texte », SRT, VTT ou texte brut."></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn" id="textGo">Analyser</button><button class="btn ghost" id="sample">Charger un exemple</button>
+        <label class="btn ghost" style="margin:0;text-transform:none;letter-spacing:0;color:var(--text);font-size:13px">Importer .txt/.srt/.vtt<input type="file" id="txtFile" accept=".txt,.srt,.vtt" hidden></label></div>
+    </div>
+  </div>
+</template>
+
+<template id="tplMeeting">
+  <div class="row between" style="margin-bottom:16px"><div><div class="kicker" id="mDate"></div><h1 id="mTitle" style="margin:6px 0 0"></h1></div>
+    <div class="row"><button class="btn ghost sm" id="copyMd">Copier en Markdown</button><button class="btn sm" id="dlMd">⇩ Exporter .md</button><button class="btn ghost sm" id="del">Supprimer</button></div></div>
+  <div class="grid" style="grid-template-columns:1.1fr 1fr;gap:20px">
+    <div class="card"><div class="card-h"><h3>Transcription</h3><span class="dim" style="font-size:12px">cliquez sur un nom pour le renommer</span></div><div class="transcript" id="tr"></div></div>
+    <div class="col" style="gap:16px">
+      <div class="card"><h3>Résumé</h3><ul class="clean" id="sum"></ul></div>
+      <div class="card"><div class="card-h"><h3>Décisions</h3><span class="badge red" id="nDec"></span></div><ul class="clean" id="dec"></ul></div>
+      <div class="card"><div class="card-h"><h3>Tâches</h3><span class="badge" id="nTask"></span></div><div id="tasks"></div></div>
+      <div class="grid g2">
+        <div class="card"><h3>Temps de parole</h3><canvas id="donut" style="width:100%;height:150px"></canvas></div>
+        <div class="card"><h3>Sujets clés</h3><div id="topics"></div><h3 style="margin-top:12px">Questions ouvertes</h3><ul class="clean" id="qs"></ul></div>
+      </div>
+    </div>
+  </div>
+</template>
+<script src="ui.js"></script><script src="charts.js"></script><script src="app.js"></script>
+</body>
+</html>

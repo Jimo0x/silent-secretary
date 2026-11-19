@@ -1,0 +1,12 @@
+Alice: Bonjour à tous, merci d'être là. L'objectif aujourd'hui est de fixer la date de lancement de l'application mobile et de répartir les dernières tâches.
+Bruno: Côté développement, le module de paiement est presque fini. Il reste les tests sur Android. Je vais terminer les tests Android d'ici jeudi.
+Chloé: Pour le design, les écrans d'accueil sont validés. Par contre est-ce qu'on garde le mode sombre pour la première version ?
+Alice: Oui, on garde le mode sombre, c'est demandé par beaucoup d'utilisateurs. C'est validé.
+Bruno: D'accord. Et pour la date de lancement, on vise toujours le 15 ?
+Alice: On a décidé de décaler le lancement au 22 pour laisser une semaine de tests utilisateurs.
+Chloé: Je m'occupe d'organiser les tests utilisateurs avec dix personnes la semaine prochaine.
+Alice: Parfait. Bruno, tu peux préparer la note de version avant vendredi ?
+Bruno: Oui, pas de souci. Il faudra aussi prévenir le support client du changement de date.
+Alice: Chloé doit envoyer le kit presse au partenaire avant le 20. Qui gère la campagne sur les réseaux sociaux ?
+Chloé: Je pense que Marc pourrait s'en charger, il faut lui demander.
+Alice: Très bien. Récapitulons : lancement le 22, mode sombre inclus, tests utilisateurs la semaine prochaine. Merci à tous.
